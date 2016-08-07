@@ -181,8 +181,8 @@ enum PinServo
 //////////////////////////////////////////////////////////////////////////////////
 
 int LEDpins[HPLedCount] = {PinDigital_2,    //Front
-			   PinDigital_3,    //Rear
-			   PinDigital_4};   //  Top
+                           PinDigital_3,    //Rear
+                           PinDigital_4};   //  Top
 
 //////////////////////////////////////////////////////////////////////////////////////////
 ///*****                         Servo Board Pin Assignments                      *****///
@@ -192,8 +192,8 @@ int LEDpins[HPLedCount] = {PinDigital_2,    //Front
 //////////////////////////////////////////////////////////////////////////////////////////    
 
 int HPpins[HPServoCount][HPAxisCount] = {{PinServo_0, PinServo_1},            // Front HP Pins
-					 {PinServo_2, PinServo_3},            // Rear HP Pins
-					 {PinServo_4, PinServo_5}};           // Top HP Pins
+                                         {PinServo_2, PinServo_3},            // Rear HP Pins
+                                         {PinServo_4, PinServo_5}};           // Top HP Pins
 
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -243,7 +243,7 @@ int RCRange[RCRangeCount] = {RC_PULSE_MIN, RC_PULSE_MAX};     // {Min, Max}
 ///*****                                                                  *****///
 ///*****                 Adjust LED Brightness Level (0-255)              *****///
 //////////////////////////////////////////////////////////////////////////////////
-#define BRIGHT 100  // Set LED Brightness Level (0-255)
+#define BRIGHT 20  // Set LED Brightness Level (0-255)
 
 //////////////////////////////////////////////////////////////////////////////////
 ///*****                Enable/Disable LED & Servo Auto Twitch            *****///
@@ -275,12 +275,12 @@ enum TwitchRangeBounds
 };
 
 const unsigned int LEDTwitchInterval[HPLedCount][TwitchRangeCount] = {{240,360},  // (4mins-6mins) Enter min and max seconds Front HP Led Twitches  
-								      {300,420},  // (5mins-7mins) Enter min and max seconds Rear HP Led Twitches  
-								      {300,420}}; // (5mins-7mins) Enter min and max seconds Top HP Led Twitches  
+                                                                      {300,420},  // (5mins-7mins) Enter min and max seconds Rear HP Led Twitches  
+                                                                      {300,420}}; // (5mins-7mins) Enter min and max seconds Top HP Led Twitches  
 
 const unsigned int HPTwitchInterval[HPServoCount][TwitchRangeCount] = {{45,120},  // (45s-2mins) Enter min and max seconds Front HP Servo Twitches  
-								       {60,180},  // (1min-3mins) Enter min and max seconds Rear HP Servo Twitches  
-								       {60,180}}; // (1min-3mins) Enter min and max seconds Top HP Servo Twitches  
+                                                                       {60,180},  // (1min-3mins) Enter min and max seconds Rear HP Servo Twitches  
+                                                                       {60,180}}; // (1min-3mins) Enter min and max seconds Top HP Servo Twitches  
 
 ///////////////////////////////////////////////////////////////////////////////////
 ///*****                  LED Auto Twitch Run Time Ranges                  *****///
@@ -294,8 +294,8 @@ const unsigned int HPTwitchInterval[HPServoCount][TwitchRangeCount] = {{45,120},
 ///////////////////////////////////////////////////////////////////////////////////
 
 const unsigned int LEDTwitchRunInterval[HPServoCount][TwitchRangeCount] = {{5,25},   // (5-25s) Front LED Runtime
-								     {5,25},   // (5-25s) Rear LED Runtime
-								     {5,25}};  // (5-25s) Top LED Runtime
+                                                                     {5,25},   // (5-25s) Rear LED Runtime
+                                                                     {5,25}};  // (5-25s) Top LED Runtime
 
 //////////////////////////////////////////////////////////////////////////////////
 ///*****                           Servo Speed                            *****///
@@ -411,8 +411,8 @@ enum HPPosBasicVector
 // These values are presumed to be safe enough not to drive your servo
 // to extremes or hit any obstructions
 int HPposBasic[HPPosBasicVecCount][HPAxisCount] = {{1500,1500},  // Center X,Y
-						   {1300,1300},  // Min X,Y
-						   {1700,1700}}; // Max X,Y 
+                                                   {1300,1300},  // Min X,Y
+                                                   {1700,1700}}; // Max X,Y 
 
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -489,6 +489,29 @@ boolean OEFlag = false;
 //////////////////////////////////////////////////////////////////////
 ///*****        Command Varaiables, Containers & Flags        *****///
 //////////////////////////////////////////////////////////////////////
+enum LEDCommands
+{
+  LEDCmdLeia=1,
+  LEDCmdColorProj,
+  LEDCmdDimPulse,
+  LEDCmdCycle,
+  LEDCmdShortCircuit,
+  LEDCmdLedColor,
+  LEDCmdRainbow,
+  LEDCmdAutoDisable = 98,
+  LEDCmdAutoEnable = 99
+};
+
+enum ServoCommands
+{
+  ServoCmdCenter = 1,
+  ServoCmdDown,
+  ServoCmdUp,
+  ServoCmdRCEnable,
+  ServoCmdAutoDisable = 98,
+  ServoCmdAutoEnable = 99
+};
+
 int commandInt;
 char inputBuffer[5];  
 String inputString = "";         // a string to hold incoming data
@@ -498,12 +521,15 @@ int typeState;
 int functionState;
 int colorState;
 
-byte FHP_command[4] = {0,0,0,0};  
-byte RHP_command[4] = {0,0,0,0}; 
-byte THP_command[4] = {0,0,0,0};
-byte FLED_command[4] = {0,0,0,0};  
-byte RLED_command[4] = {0,0,0,0}; 
-byte TLED_command[4] = {0,0,0,0};
+
+
+byte HP_command[HPServoCount][4] = {{0,0,0,0},
+                                    {0,0,0,0},
+                                    {0,0,0,0}};
+
+byte LED_command[HPLedCount][4] = {{0,0,0,0},
+                                   {0,0,0,0},
+                                   {0,0,0,0}};
 
 int commandLength;
 
@@ -536,7 +562,7 @@ enum ColorShades
 const uint32_t basicColors[ColorCount][ShadeCount] =
                                        {{    C_OFF,    C_OFF,    C_OFF,    C_OFF,    C_OFF,    C_OFF, C_OFF},
                                         {    C_RED,  C_WHITE, 0xFB6161, 0xFFA0A0, 0xFD5555, 0xFFD3D3, C_OFF},
-     				        { C_YELLOW,  C_WHITE, 0xFDFD43, 0xFFFF82, 0xFFFFBA, 0xFEDED7, C_OFF},
+                                        { C_YELLOW,  C_WHITE, 0xFDFD43, 0xFFFF82, 0xFFFFBA, 0xFEDED7, C_OFF},
                                         {  C_GREEN,  C_WHITE, 0x57FC57, 0x80FC80, 0xBDFFB1, 0xDDFEDD, C_OFF},
                                         {   C_CYAN,  C_WHITE, 0x38FFFF, 0x71FDFD, 0xA4FDFD, 0xCCFEFE, C_OFF},
                                         {   C_BLUE,  C_WHITE, 0xACACFF, 0x7676FF, 0x5A5AFF, 0x3D3DFF, C_OFF},
@@ -644,12 +670,6 @@ void loop(){
   int i;
   unsigned long currTime = millis();
 
-  /*  PAA Unused.
-  tF=millis();
-  tR=millis();
-  tT=millis();
-  */
-  
 
   if(stringComplete) {
     inputString.toCharArray(inputBuffer, 6);inputString="";                    // If a complete Command string has been flagged, write the string to array to process. 
@@ -667,167 +687,114 @@ void loop(){
               else {colorState = COLOR_DEFAULT;}
         }
         if(inputBuffer[0]=='F' || inputBuffer[0]=='A') {
-          if (typeState == 0) { FLED_command[0]   = '\0';  // Flushes Array
-                                FLED_command[0] = functionState;
-                                FLED_command[1] = colorState; 
-                                varResets(0);
-                                }
-          else if (typeState == 1) { FHP_command[0]   = '\0';  // Flushes Array
-                                     FHP_command[0] = functionState;
-                                     enableTwitchHP[HPServoFront] = false;           // Toggle Auto HP Twitch off so it doesn't interupt sequence
-                                     }
+          if (typeState == 0){ 
+            LED_command[HPLedFront][0] = functionState;
+            LED_command[HPLedFront][1] = colorState; 
+            varResets(HPFront);
+          }
+          else if (typeState == 1) { 
+            HP_command[HPServoFront][0]  = functionState;
+            enableTwitchHP[HPServoFront] = false;           // Toggle Auto HP Twitch off so it doesn't interupt sequence
+          }
         }
 
         if(inputBuffer[0]=='R' || inputBuffer[0]=='A') {
-          if (typeState == 0) { RLED_command[0]   = '\0';  // Flushes Array
-                                RLED_command[0] = functionState;
-                                RLED_command[1] = colorState; 
-                                varResets(1);
-                                }
-          else if (typeState == 1) { RHP_command[0]   = '\0';  // Flushes Array
-                                     RHP_command[0] = functionState;
-				     enableTwitchHP[HPServoRear] = false;// Toggle Auto HP Twitch off so it doesn't interupt sequence
-                                     }
+          if (typeState == 0) { 
+            LED_command[HPLedRear][0] = functionState;
+            LED_command[HPLedRear][1] = colorState; 
+            varResets(HPRear);
+          }
+          else if (typeState == 1) { 
+            HP_command[HPServoRear][0]  = functionState;
+            enableTwitchHP[HPServoRear] = false;        // Toggle Auto HP Twitch off so it doesn't interupt sequence
+          }
         } 
       
         if(inputBuffer[0]=='T' || inputBuffer[0]=='A') {
-          if (typeState == 0) { TLED_command[0]   = '\0';  // Flushes Array
-                                TLED_command[0] = functionState;
-                                TLED_command[1] = colorState; 
-                                varResets(2);
-                                }
-          else if (typeState == 1) { THP_command[0]   = '\0';  // Flushes Array
-                                     THP_command[0] = functionState;
-                                     enableTwitchHP[HPServoTop] = false;// Toggle Auto HP Twitch off so it doesn't interupt sequence
-                                     }
+          if (typeState == 0) { 
+            LED_command[HPLedTop][0] = functionState;
+            LED_command[HPLedTop][1] = colorState; 
+            varResets(HPTop);
+          }
+          else if (typeState == 1) { 
+            HP_command[HPServoTop][0]  = functionState;
+            enableTwitchHP[HPServoTop] = false;         // Toggle Auto HP Twitch off so it doesn't interupt sequence
+          }
         }
       }
       else if (inputBuffer[0]=='S') {                     // Major Sequences (Both LEDS and HP Servos)
         if(commandLength >= 2) {
              functionState = (inputBuffer[1]-'0');
              switch (functionState) { 
-               case 1: varResets(HPLedFront); varResets(HPLedRear); varResets(HPLedTop);               // Resets the Variables for LEDs on all 3 HPs
-                       enableTwitchHP[HPServoFront]=false;            // Disables Auto HP Twith on all HPs
-                       enableTwitchHP[HPServoRear]=false;		
-                       enableTwitchHP[HPServoTop]=false;
-                       downHP(HPServoFront);                                                        // Moves Front HP to Down Position
-                       ledOFF(HPLedRear);ledOFF(HPLedTop);                                              // Turns Off LEDs on Rear and Top HPs
-                       RLED_command[0]   = '\0'; TLED_command[0]   = '\0';               // Flushes Command Array for Rear and Top HP
-                       FLED_command[0] = 1;                                              // Set Leia LED Sequence to run each loop.
+               case 1: 
+                       for(i=HPFront; i<HPCount;i++)
+                       {
+                         varResets(i);                      // Resets the Variables for LEDs on all 3 HPs
+                         enableTwitchHP[i]=false;           // Disables Auto HP Twith on all HPs  
+                       }
+                       downHP(HPServoFront);                                              // Moves Front HP to Down Position
+                       ledOFF(HPLedRear);ledOFF(HPLedTop);                                // Turns Off LEDs on Rear and Top HPs
+                       LED_command[HPLedRear][0] = NULL; LED_command[HPLedTop][0] = NULL; // Flushes Command Array for Rear and Top HP
+                       LED_command[HPLedFront][0] = 1;                                    // Set Leia LED Sequence to run each loop.
                        break;
                case 8: 
-                       enableTwitchHP[HPServoFront]=false;            // Disables Auto HP Twith on all HPs
-                       enableTwitchHP[HPServoRear]=false;		
+                       enableTwitchHP[HPServoFront]=false;  // Disables Auto HP Twith on all HPs
+                       enableTwitchHP[HPServoRear]=false;               
                        enableTwitchHP[HPServoTop]=false;
-                       FLED_command[0]='\0';RLED_command[0] ='\0';TLED_command[0]='\0';  // Flushes Command Array for Rear and Top HP
-                       ledOFF(HPLedFront);ledOFF(HPLedRear);ledOFF(HPLedTop);                                    // Turns Off LEDs on all HPs
-		       enableTwitchLED[HPLedFront] = false;// Disables Auto LED Twith on all HPs 
-		       enableTwitchLED[HPLedRear] = false;
-		       enableTwitchLED[HPLedTop] = false;
+                       for(i=HPLedFront; i<HPLedCount;i++)
+                       {
+                         LED_command[i][0]=NULL;            // Flushes Command Array for Rear and Top HP
+                         ledOFF(i);                         // Turns Off LEDs on all HPs
+                         enableTwitchLED[i] = false;        // Disables Auto LED Twith on all HPs 
+                       }
                        break;
                case 9: 
-                       enableTwitchHP[HPServoFront]=true;            // Enables Auto HP Twith on all HPs'
-                       enableTwitchHP[HPServoRear]=true;		
-                       enableTwitchHP[HPServoTop]=true;
-                       FLED_command[0]='\0';RLED_command[0] ='\0';TLED_command[0]='\0';  // Flushes Command Array for Rear and Top HP
-                       ledOFF(HPLedFront);ledOFF(HPLedRear);ledOFF(HPLedTop);                                    // Turns Off LEDs on all HPs
-		       enableTwitchLED[HPLedFront] = true;
-		       enableTwitchLED[HPLedRear] = true;
-		       enableTwitchLED[HPLedTop] = true;
+                       for(i=HPFront; i<HPCount;i++)
+                       {
+                         enableTwitchHP[i] = true;          // Enables Auto HP Twith on all HPs'
+                         LED_command[i][0]=NULL;            // Flushes Command Array for all HPs
+                         ledOFF(i);
+                         enableTwitchLED[i] = true;
+                       }
                        break;
              }
          }
       }
       ///***  Clear States and Reset for next command.  ***///
-       inputString = "";
-       stringComplete = false; 
-       inputBuffer[0] = '\0';
-       int displayState;
-       int typeState;
-       int colorState;
-       int functionState;   
+    inputString = "";
+    stringComplete = false; 
+    inputBuffer[0] = '\0';
+  }
+
+  /*
+  ** Execute commands for Fronts, Rears, Tops.
+  */
+  for(i=HPFront; i < HPCount; i++)
+  {
+    switch (LED_command[i][0]) {
+      case 1: leiaLED(i);break;
+      case 2: colorProjectorLED(i,LED_command[i][1]); break; 
+      case 3: dimPulse(i, LED_command[i][1]); break;
+      case 4: cycle(i,LED_command[i][1]); break;
+      case 5: ShortCircuit(i,LED_command[i][1]); break;
+      case 6: ledColor(i,LED_command[i][1]);LED_command[i][0]=NULL; break;
+      case 7: rainbow(i); break;   
+      case 98: ledOFF(i); enableTwitchLED[i] = false; LED_command[i][0]=NULL; break;   // Clear Function, Disable Random LED Twitch
+      case 99: ledOFF(i); enableTwitchLED[i] = true;  LED_command[i][0]=NULL; break;   // Clear Function, Enable Random LED Twitch
+      default: break;
     }
 
-      
-  
-  switch (FLED_command[0]) {
-    case 1: leiaLED(0);break;
-    case 2: colorProjectorLED(0,FLED_command[1]); break; 
-    case 3: dimPulse(0, FLED_command[1]); break;
-    case 4: cycle(0,FLED_command[1]); break;
-    case 5: ShortCircuit(0,FLED_command[1]); break;
-    case 6: ledColor(0,FLED_command[1]);FLED_command[0]='\0'; break;
-    case 7: rainbow(0); break;   
-    case 98: ledOFF(0); enableTwitchLED[HPLedFront] = false; FLED_command[0]='\0'; break;   // Clear Function, Disable Random LED Twitch
-    case 99: ledOFF(0); enableTwitchLED[HPLedFront] = true; FLED_command[0]='\0'; break;   // Clear Function, Enable Random LED Twitch
-    default: break;
+    switch (HP_command[i][0]) {
+      case 1: centerHP(HPServoFront); HP_command[i][0]=NULL; break; 
+      case 2: downHP(HPServoFront);   HP_command[i][0]=NULL; break;
+      case 3: upHP(HPServoFront);     HP_command[i][0]=NULL; break;
+      case 4: RCHP(HPServoFront); break; 
+      case 5: twitchHP(HPServoFront); HP_command[i][0]=NULL; break;
+      case 98: enableTwitchHP[HPServoFront]=false; HP_command[i][0]=NULL; break;   // Clear Function, Disable Servo Random Twitch
+      case 99: enableTwitchHP[HPServoFront]=true;  HP_command[i][0]=NULL; break;   // Clear Function, Enable Servo Random Twitch
+      default: break;
+    }
   }
-
-  switch (FHP_command[0]) {
-    case 1: centerHP(0); FHP_command[0]='\0'; break; 
-    case 2: downHP(0); FHP_command[0]='\0'; break;
-    case 3: upHP(0); FHP_command[0]='\0'; break;
-    case 4: RCHP(0);break;
-    case 5: twitchHP(0); FHP_command[0]='\0'; break;
-    case 98: enableTwitchHP[HPServoFront]=false; FHP_command[0]='\0'; break;   // Clear Function, Disable Servo Random Twitch
-    case 99: enableTwitchHP[HPServoFront]=true; FHP_command[0]='\0'; break;   // Clear Function, Enable Servo Random Twitch
-    default: break;
-  }
-
-
-
-
-  switch (RLED_command[0]) {
-    case 1: leiaLED(1);break;
-    case 2: colorProjectorLED(1,RLED_command[1]); break; 
-    case 3: dimPulse(1,RLED_command[1]); break;
-    case 4: cycle(1,RLED_command[1]); break;
-    case 5: ShortCircuit(1,RLED_command[1]); break;
-    case 6: ledColor(1,RLED_command[1]); RLED_command[0]='\0'; break;
-    case 7: rainbow(1); break;
-    case 98: ledOFF(1); enableTwitchLED[HPLedRear]=false; RLED_command[0]='\0'; break;   // Clear Function, Disable Random LED Twitch
-    case 99: ledOFF(1); enableTwitchLED[HPLedRear]=true; RLED_command[0]='\0'; break;   // Clear Function, Enable Random LED Twitch
-    default: break;
-  }
-
-  switch (RHP_command[0]) {
-    case 1: centerHP(1); RHP_command[0]='\0'; break; 
-    case 2: downHP(1); RHP_command[0]='\0'; break;
-    case 3: upHP(1); RHP_command[0]='\0'; break;
-    case 4: RCHP(1);break;
-    case 5: twitchHP(1); RHP_command[0]='\0'; break;
-    case 98: enableTwitchHP[HPServoRear]=false; RHP_command[0]='\0'; break;   // Clear Function, Disable Servo Random Twitch
-    case 99: enableTwitchHP[HPServoRear]=true; RHP_command[0]='\0'; break;   // Clear Function, Enable Servo Random Twitch
-    default: break;
-  }
-
-
-  switch (TLED_command[0]) {
-    case 1: leiaLED(2);break;
-    case 2: colorProjectorLED(2,TLED_command[1]); break; 
-    case 3: dimPulse(2,TLED_command[1]); break;
-    case 4: cycle(2,TLED_command[1]); break;
-    case 5: ShortCircuit(2,TLED_command[1]); break;
-    case 6: ledColor(2,TLED_command[1]); TLED_command[0]='\0'; break;
-    case 7: rainbow(2); break;
-    case 98: ledOFF(2); enableTwitchLED[HPLedTop]=false; TLED_command[0]='\0'; break;   // Clear Function, Disable Random LED Twitch
-    case 99: ledOFF(2); enableTwitchLED[HPLedTop]=true; TLED_command[0]='\0'; break;   // Clear Function, Enable Random LED Twitch
-    default: break;
-  }
-
-  switch (THP_command[0]) {
-    case 1: centerHP(2); THP_command[0]='\0'; break; 
-    case 2: downHP(2); THP_command[0]='\0'; break;
-    case 3: upHP(2); THP_command[0]='\0'; break;
-    case 4: RCHP(2);break;
-    case 5: twitchHP(2); THP_command[0]='\0'; break;
-    case 98: enableTwitchHP[HPServoTop]=false; THP_command[0]='\0'; break;   // Clear Function, Disable Servo Random Twitch
-    case 99: enableTwitchHP[HPServoTop]=true; THP_command[0]='\0'; break;   // Clear Function, Random Twitch
-    default: break;
-  }
-
-  
- 
 
   for (i=HPLedFront; i<HPLedCount; i++)
   {
@@ -982,7 +949,7 @@ void ledColor(byte hp, int c)
 void leiaLED(byte hp)
 {
   int i;
-	
+        
   if ((millis() - tCounter[hp]) > interval[hp]) {
     for(i=0; i < NEO_JEWEL_LEDS; i++)
       neoStrips[hp].setPixelColor(i,basicColors[COLOR_DEFAULT][random(ShadeSolid,ShadeCount)]);
@@ -997,11 +964,11 @@ void leiaLEDtwitch(int hp)
 {
   if((millis() - twitchLEDTime[hp]) < twitchLEDRunTime[hp])
   {
-    leiaLED(0);
+    leiaLED(hp);
   }
   else
   {
-    ledOFF(0);
+    ledOFF(hp);
     twitchLEDTime[hp] = (1000*random(LEDTwitchInterval[hp][TwitchRangeMin],LEDTwitchInterval[hp][TwitchRangeMax]))+millis();
     twitchLEDRunTime[hp] = (1000*random(LEDTwitchRunInterval[hp][TwitchRangeMin],LEDTwitchRunInterval[hp][TwitchRangeMax]));
   }
@@ -1045,7 +1012,7 @@ void dimPulse(byte hp, int c) {
     if(elapsed >= frame_interval)
     {
       for(int i=0; i < NEO_JEWEL_LEDS; i++)
-	neoStrips[hp].setPixelColor(i, dimColorVal(c,(frame*8)));
+        neoStrips[hp].setPixelColor(i, dimColorVal(c,(frame*8)));
       neoStrips[hp].show();
     }
   }
@@ -1058,17 +1025,17 @@ void ShortCircuit(byte hp, int c) {
   if(SCloop[hp] <= 20) {
     if ((millis() - tCounter[hp]) > SCinterval[hp]) {
       if(SCflag[hp] == 0) {
-	for(int i=0; i < NEO_JEWEL_LEDS; i++)
-	  neoStrips[hp].setPixelColor(i,C_OFF);
-	SCflag[hp]=1;
-	SCinterval[hp] = 10 + (SCloop[hp] * random(15,25));
+        for(int i=0; i < NEO_JEWEL_LEDS; i++)
+          neoStrips[hp].setPixelColor(i,C_OFF);
+        SCflag[hp]=1;
+        SCinterval[hp] = 10 + (SCloop[hp] * random(15,25));
       } 
       else {
-	for(int i=0; i < NEO_JEWEL_LEDS; i++)
-	  neoStrips[hp].setPixelColor(i,basicColors[c][random(ShadeSolid,ShadeCount)]); 
-	neoStrips[hp].show(); // PAA This is redundant with the one below
-	SCflag[hp] = 0;
-	SCloop[hp]++;
+        for(int i=0; i < NEO_JEWEL_LEDS; i++)
+          neoStrips[hp].setPixelColor(i,basicColors[c][random(ShadeSolid,ShadeCount)]); 
+        neoStrips[hp].show(); // PAA This is redundant with the one below
+        SCflag[hp] = 0;
+        SCloop[hp]++;
       }
       tCounter[hp] = millis();
       neoStrips[hp].show();
@@ -1092,9 +1059,9 @@ void cycle(byte hp, int c) {
       Frame[hp]=0;
     for (int i = 0; i <=5; i++) { 
       if (i == Frame[hp])
-	neoStrips[hp].setPixelColor(i+1, basicColors[c][ShadeSolid]);
+        neoStrips[hp].setPixelColor(i+1, basicColors[c][ShadeSolid]);
       else
-	neoStrips[hp].setPixelColor(i+1, C_OFF);
+        neoStrips[hp].setPixelColor(i+1, C_OFF);
     }
     neoStrips[hp].show(); 
     Frame[hp]++;
@@ -1112,6 +1079,8 @@ void rainbow(byte hp) {
   int interval = 10;
   long elapsed;
   byte frame;        
+
+  Serial.println("Rainbow");
 
 
   elapsed = millis() - tCounter[hp];
@@ -1236,6 +1205,10 @@ void varResets(byte hp)
 void serialEvent() {
   while (Serial.available()) {                         // Loop through all incoming bytes
     char inChar = (char)Serial.read();                 // Receive each byte as a character        
+
+    Serial.println("Serial received");
+    Serial.println(inChar);
+
     if (inChar == '\r' || inChar == '\n') {            // if the incoming character is a carriage return (\r) or newline (\n), it denotes end of command
       stringComplete = true;                           // Once done, set a flag so the main loop can do something about it. 
     } 
@@ -1243,6 +1216,8 @@ void serialEvent() {
       inputString += inChar;                           // Add each Character to inputString     
     }
   }
+  Serial.println("Serial received");
+
 }
 
 /////////////////////////////////////////////////////////
