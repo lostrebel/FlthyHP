@@ -311,9 +311,12 @@
   //////////////////////////////////////////////////////////////////////////////////
 
 // PAA: Recommend that define the number of positions and use that define as your
-// bounds in the code.
+// bounds in the code.\
+// RPS: Makes Sense will do
 // You can make an enum to enumerate the positions in the array which might make
 // the code easier to read.
+// RPS: I am not well versed on the use of enum, I will have to look into its uses and purpose so 
+// I understand why you suggest its use. 
 #define HPPOSITIONS 9
     int HPpos[HPCOUNT][HPPOSITIONS][2] =
                                {{{1434,1800},   // Front HP Down
@@ -347,12 +350,14 @@
 // PAA: enableBasicHP: Since this isn't modified at runtime it could be a const or a #define
 // In fact the code could be conditionally compiled for supporting one or the other
 // but then you would have to compile then test, compile the other way then test.
+// RPS:  Makes Sense, will do
 //
 // That said, I think it would be a cool idea to have a command which invoked all the features in order
 // to make sure they are all working. This test/demo mode which just cycle through all the commands
 // moving from one mode to the next as they complete their thing. You could also switch at runtime from
 // enableBasicHP = false to true and restart the servo cycle to test that everything works as expected
 // in both modes.
+// RPS:  I actually thought to do something along these lines.  Great minds and all that jazz.
     boolean enableBasicHP = false;                   // false - Disabled, true- Enabled, Basic Servo Positioning
     int HPposBasic[2][3] = {{1500,1300,1700},        // HP Servo 1 Values for Basic Mode (Center, Min, Max)
                             {1500,1300,1700}};       // HP Servo 2 Values for Basic Mode (Center, Min, Max)
@@ -380,6 +385,7 @@
 // PAA: These never change at runtime so make them #defines and save 2 ints. Eg
 // #define DEFAULTCOLOR 5
 // #define SHORTCOLOR   7
+// RPS: Makes Sense. will do.
     int defaultColor = 5;     // Blue, Color integer value for the hue of default sequence. This is to appease MKelly and MKarp's whiney little asses, lol
     int shortColor   = 7;     // Orange, Color integer value for the hue of ShortCircuit Message.  
 
@@ -422,6 +428,7 @@ int commandInt;
 
 // PAA: NOTE 01: DANGER: You define inputBuffer as 5 chars big here but else you say it is 6 chars, risking overwriting memory.
 // better would be to #define INPUTBUFLEN X and use INPUTBUFLEN as the size rather than using literal constants
+// RPS: Thanks for catching this.
 char inputBuffer[5];  
 String inputString = "";                       // a string to hold incoming data
 volatile boolean stringComplete  = false;      // whether the serial string is complete
@@ -432,6 +439,7 @@ int colorState;
 int positionState;
 
 // PAA: You have arrays of 3x4 elements but only use 3x2
+// RPS:  Haha, I think I just created a container in the beginning and never utilized all of them.   I will chop each down.
 byte HP_command[HPCOUNT][4] = {{0,0,0,0},
                                {0,0,0,0},
                                {0,0,0,0}};
@@ -459,6 +467,10 @@ int commandLength;
 
 // PAA: A comment explaining why colours are repeated 3 times, then white, then shades of colour, then off 3 times would help here!
 // I think I understand what your intent was but not 100% 
+// RPS:  What I was trying to do here was improve the color balanced and flicker when the HPs run in the Leia/Projector sequence.
+// I added multiple instances of the basic color {3 each) to increase the number of instances it is randomly chosen.  I did this 
+// because I felt there was too much white(ish) in the mix.  Likewise, I added the three off values so there would be more flicker in 
+// the sequence.  There might be a better way to achieve the same results but this just seemed like an easy way to do it.
   const uint32_t basicColors[10][10] = {{     C_RED,  C_YELLOW,   C_GREEN,   C_CYAN,   C_BLUE, C_MAGENTA, C_PURPLE, C_WHITE, C_OFF, C_OFF},    // Random
                                         {     C_RED,     C_RED,     C_RED,  C_WHITE, 0xFFA0A0,  0xFD5555, 0xFFD3D3,   C_OFF, C_OFF, C_OFF},    // Red
                                         {  C_YELLOW,  C_YELLOW,  C_YELLOW,  C_WHITE, 0xFDFD43,  0xFFFF82, 0xFFFFBA,   C_OFF, C_OFF, C_OFF},    // Yellow
@@ -494,6 +506,9 @@ Adafruit_NeoPixel neoStrips[HPCOUNT];
 Servos servos(SERVOI2CADDRESS);
 
 // PAA: I'd move this further up the file to group it with all the other pin references
+// RPS: I had thought about that but because it is for the on board LED that Arduinos always tie to the digital 13 pin, 
+// I didn't think it would be wise to include it within the section covering other user definable values. It would give 
+// the impression it can be changed.  
 #define STATUSLEDPIN 13
 
 void setup() { 
@@ -573,6 +588,13 @@ void loop(){
         }
         // PAA: You don't need these flushes array statements. The optimizer is probably removing it for you but since you assign
         // the same location immediately in the next statement it does nothing.
+        
+        // RPS: Ok, I always worry I might acidentally mix up variables so I just made it a habit of flushing things.  
+        // I think my fear hear was the LED_command[0][1] could persist through recieving a new serial/I2C command if the 
+        // user didn't use a complete follow up command. ie Not appending color or position value to the end of a 
+        // commands that requires one. It was my understanding setting array[0] to '\0' essentially emptied it.  
+        // If there is a better way to ensure this or you feel it isn't needed I can remove them.  
+        
         if(inputBuffer[0]=='F' || inputBuffer[0]=='A') {
           if (typeState == 0) { LED_command[0][0] = '\0';               // Flushes Array
                                 LED_command[0][0] = functionState;
@@ -729,6 +751,8 @@ int mapPulselength(int microseconds) {
 // use just one and change your speed range arrays to have
 // some thing like {default, min, max}
 
+// RPS:  I see what you are saying here.   
+
     void positionHP(byte hp, byte pos, int speed) {
      int pos1;
      int pos2; 
@@ -798,6 +822,7 @@ int mapPulselength(int microseconds) {
     }
 
 // PAA: Nice addition! I love it!
+// RPS: Thanks!
     void wagHP(byte hp, byte type){
       if(!enableBasicHP) {
         if(WagCount[hp] < 0) {WagCount[hp] = 0;WagTimer[hp]=millis();}                  
@@ -864,6 +889,9 @@ int mapPulselength(int microseconds) {
 // PAA: Enhancement request: A neat addition to the pulse routine would be to have
 // duration option so that you could make the pulse more of a
 // throb vs. blip.
+// RPS:  Ok, I will see what I can do.  Are You thinking you would want it a bit faster or slower.   
+// I could pass in the inter value to give the ability to adjust its speed from outside the function 
+// and then just map certain values to additional commands.
       void dimPulse(byte hp, int c) {
         int inter = 15;
         long elapsed;
