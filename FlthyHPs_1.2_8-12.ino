@@ -87,7 +87,7 @@
 ///       S8    - Clear all LEDs, Disable Auto HP Twitch, Disable Auto LED Sequence                  ///
 ///       S9    - Clear all LEDs, Enable Auto HP Twitch, Enable Auto LED Sequence                    ///
 ///                                                                                                  ///
-///   * Function disabled or severelty limited when Basic HP Positioning in enabled.                 /// 
+///   * Function disabled or severely limited when Basic HP Positioning in enabled.                  /// 
 ///     I recomend using Preset Position Coordinates                                                 ///
 ///                                                                                                  ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -147,7 +147,7 @@
 ///*****               Arduino Digital Pin Assignments for LEDs           *****///
 ///*****                                                                  *****///
 //////////////////////////////////////////////////////////////////////////////////
-int LEDpins[HPCOUNT]   = {2,3,4};   // {Front, Rear, Top}
+const uint8_t LEDpins[HPCOUNT]   = {2,3,4};   // {Front, Rear, Top}
 
 //////////////////////////////////////////////////////////////////////////////////////////
 ///*****                         Servo Board Pin Assignments                      *****///
@@ -155,7 +155,7 @@ int LEDpins[HPCOUNT]   = {2,3,4};   // {Front, Rear, Top}
 ///*****  HPpins[HPCOUNT][2] = {{Front 1, Front2}, {Rear 1, Rear 2}, {Top 1, Top 2}};   *****///
 ///*****                                                                          *****///
 //////////////////////////////////////////////////////////////////////////////////////////    
-int HPpins[HPCOUNT][2] = {{0,1},{2,3},{4,5}};           // Front HP Pins, Rear HP Pins, Top HP Pins
+const uint8_t HPpins[HPCOUNT][2] = {{0,1},{2,3},{4,5}};           // Front HP Pins, Rear HP Pins, Top HP Pins
 
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -190,7 +190,7 @@ int HPpins[HPCOUNT][2] = {{0,1},{2,3},{4,5}};           // Front HP Pins, Rear H
 ///*****             Pulse Width Range of RC Stick/Controller             *****///
 ///*****               assigned to control HP movement.                   *****///
 //////////////////////////////////////////////////////////////////////////////////
-int RCRange[2] = {1250, 1750};     // {Min, Max}
+const int RCRange[2] = {1250, 1750};     // {Min, Max}
     
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -229,13 +229,13 @@ boolean enableTwitchHP[HPCOUNT] = {true,true,true};    // Servos: Front, Rear, T
 ///*****                                                                   *****///
 ///////////////////////////////////////////////////////////////////////////////////  
     
-unsigned int LEDTwitchInterval[HPCOUNT][2] = {{240,360},           // (4mins-6mins) Enter min and max seconds Front HP Led Twitches  
-                                              {300,420},           // (5mins-7mins) Enter min and max seconds Rear HP Led Twitches 
-                                              {300,420}};          // (5mins-7mins) Enter min and max seconds Top HP Led Twitches    
+const unsigned int LEDTwitchInterval[HPCOUNT][2] = {{240,360},           // (4mins-6mins) Enter min and max seconds Front HP Led Twitches  
+                                                    {300,420},           // (5mins-7mins) Enter min and max seconds Rear HP Led Twitches 
+                                                    {300,420}};          // (5mins-7mins) Enter min and max seconds Top HP Led Twitches    
     
-unsigned int HPTwitchInterval[HPCOUNT][2] = {{45,120},             // (45s-2mins) Enter min and max seconds Front HP Servo Twitches  
-                                             {60,180},             // (1min-3mins) Enter min and max seconds Rear HP Servo Twitches
-                                             {60,180}};            // (1min-3mins) Enter min and max seconds Top HP Servo Twitches  
+const unsigned int HPTwitchInterval[HPCOUNT][2] = {{45,120},             // (45s-2mins) Enter min and max seconds Front HP Servo Twitches  
+                                                   {60,180},             // (1min-3mins) Enter min and max seconds Rear HP Servo Twitches
+                                                   {60,180}};            // (1min-3mins) Enter min and max seconds Top HP Servo Twitches  
 
 ///////////////////////////////////////////////////////////////////////////////////
 ///*****                  LED Auto Twitch Run Time Ranges                  *****///
@@ -245,9 +245,9 @@ unsigned int HPTwitchInterval[HPCOUNT][2] = {{45,120},             // (45s-2mins
 ///*****                      LED twitch is executed.                      *****///
 ///*****                                                                   *****///
 ///////////////////////////////////////////////////////////////////////////////////  
-unsigned int LEDTwitchRunInterval[HPCOUNT][2] = {{5,25},   // (5-25s) Front LED Runtime
-                                                 {5,25},   // (5-25s) Rear LED Runtime
-                                                 {5,25}};  // (5-25s) Top LED Runtime  
+const unsigned int LEDTwitchRunInterval[HPCOUNT][2] = {{5,25},   // (5-25s) Front LED Runtime
+                                                       {5,25},   // (5-25s) Rear LED Runtime
+                                                       {5,25}};  // (5-25s) Top LED Runtime  
 
 //////////////////////////////////////////////////////////////////////////////////
 ///*****                           Servo Speed                            *****///
@@ -391,15 +391,23 @@ const int dimPulseSpeedRange[2] = {5, 75};      // Range used to map to value op
 //////////////////////////////////////////////////////////////////////
 ///*****  Sequence/Function Varaiables, Containers & Counters *****///
 //////////////////////////////////////////////////////////////////////
-unsigned long tCounter[HPCOUNT] = {0, 0, 0};
-unsigned long interval[HPCOUNT] = {100, 100, 100};
-unsigned long SCinterval[HPCOUNT] = {10, 10, 10};
 
-int SCloop[HPCOUNT] = {0, 0, 0};
-int SCflag[HPCOUNT] = {0, 0, 0};
+// General counters and timers shared across more than one animation
+unsigned long tCounter[HPCOUNT] = {0, 0, 0};
+unsigned int  interval[HPCOUNT] = {100, 100, 100};
+
+
+// Short Circuit Animation
+#define SCMAXLOOPS 20
+byte         SCloop[HPCOUNT] = {0, 0, 0};   // Loop counter for short circuit animation.
+boolean      SCflag[HPCOUNT] = {false, false, false};
+unsigned int SCinterval[HPCOUNT] = {10, 10, 10};
+
+// Cycle Animation
 byte Frame[HPCOUNT] = {0, 0, 0};
 
-int  WagCount[HPCOUNT] = {-1,-1,-1};  // Use of negative value to determine first loop 
+// Wag Animation
+byte WagCount[HPCOUNT] = {-1,-1,-1};  // Use of negative value to determine first loop 
 long WagTimer[HPCOUNT] = {0,0,0};
 
 int RCinputCh1;
@@ -408,14 +416,15 @@ long twitchLEDTime[HPCOUNT] = {4000, 4000, 4000}; //LEDS Start up 4 seconds afte
 long twitchHPTime[HPCOUNT]  = {4000, 4000, 4000}; //HPs Start 4 seconds after boot
 long twitchLEDRunTime[HPCOUNT];
 
-long ledtimer = 0;      
-long int OECounter = 0;
-boolean OEFlag = false;
+unsigned long ledtimer = 0;      
+
+// Output enabled timers and flag
+unsigned long OETime = 0;  // The time at which output was enabled
+boolean       OEFlag = false;
 
 //////////////////////////////////////////////////////////////////////
 ///*****        Command Varaiables, Containers & Flags        *****///
 //////////////////////////////////////////////////////////////////////
-int commandInt;
 
 #define INPUTBUFFERLEN 7
 char inputBuffer[INPUTBUFFERLEN];  
@@ -501,6 +510,30 @@ Servos servos(SERVOI2CADDRESS);
 #define STATUSLEDMSECS 200                 // Amount of time to flash the led pin
 #define STATUSLEDPIN 13                    // The builtin LED on the Arduino mini is on pin 13
 
+#define TESTMODEMSECS 10000                // 10 secs each before moving on
+unsigned long testModeTimer = 0;      
+boolean       testMode = false;
+int           testModeIndex;  // index into testModeTests array
+
+#define TESTMODENUMTESTS 10
+const char * const testModeTests[TESTMODENUMTESTS] = {"A001",
+                                                      "A0022",
+                                                      "A0031",
+                                                      "A0043",
+                                                      "A005",
+                                                      "A0066",
+                                                      "A007",
+                                                      "A008",  // Bogus command. Make sure it doesn't crash
+                                                      "A009",  // Bogus command.
+                                                      "END"};  // Bogus command.
+
+  
+
+
+////////////////////////////////////////////////////////////
+/// Setup and initialization                             ///
+////////////////////////////////////////////////////////////
+
 void setup() { 
   randomSeed(analogRead(0));               // Seeds psuedo-random number generator with current value on unconnected anolog pin to make random more randomy.
  
@@ -544,11 +577,13 @@ void setup() {
     twitchLEDRunTime[i] = (1000*random(LEDTwitchRunInterval[i][0],LEDTwitchRunInterval[i][1]));  // Randomly sets initial LED Twitch Run Time value
   }
 
-  Serial.println("");
-  Serial.print(F("FlthyHPs, Sketch Version 1.")); Serial.println(VERSION);
-  if(ENABLEBASICHP) {Serial.println(F("Basic HP Positioning Enabled")); }
-  else {Serial.println(F("Basic HP Positioning Disabled"));}
-  Serial.println("");
+  Serial.print(F("\nFlthyHPs, Sketch Version 1.")); Serial.println(VERSION);
+  Serial.print(F("Basic HP Positioning "));
+  if(ENABLEBASICHP)
+    Serial.println(F("Enabled\n"));
+  else
+    Serial.println(F("Disabled\n"));
+
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -563,10 +598,21 @@ void loop(){
 
   currTime = millis();
   statusLEDCheck();        // see if the status led should be turned off
-  
 
+  // Test/Demo mode works by injecting commands every n seconds to simulate
+  // receiving actual commands. When a real command is received, it cancels 
+  // Test/Demo mode.
+  //
+  // So each time through this loop, check if we are in Demo mode and check
+  // if we should move to the next command.
+
+  testModeCheck();
+  
   if(stringComplete) {
     commandLength = inputString.length();
+    if (commandLength > INPUTBUFFERLEN) // Overflow? Truncate/Ignore
+      commandLength = INPUTBUFFERLEN;
+    
     inputString.toCharArray(inputBuffer, INPUTBUFFERLEN);
     inputString="";       // If a complete Command string has been flagged, write the string to array to process.
 
@@ -686,7 +732,7 @@ void loop(){
   // If OutputEnabled and the time since last move is greater that the speed allowance,
   // then turn off the servos to keep them from humming.
   if(OEFlag &&
-     (millis() - OECounter) >= SERVO_SPEED[1]) {            
+     (millis() - OETime) >= SERVO_SPEED[1]) {            
               digitalWrite(OUTPUT_ENABLED_PIN, HIGH);       
               OEFlag = false;                               
   }
@@ -695,7 +741,7 @@ void loop(){
 
 
 ////////////////////////////////////////////////////////////
-// This needs an explanation
+// This needs an explanation                             /// 
 ////////////////////////////////////////////////////////////
 int mapPulselength(int microseconds) {
   int y = map(microseconds, 1000, 2000, 200, 550);
@@ -711,7 +757,7 @@ void enableServos() {
   if(OUTPUT_ENABLED_ON) {                        // If OE control of the Servo Break Out Board is enabled
     digitalWrite(OUTPUT_ENABLED_PIN, LOW);       // Set OE Pin to low to enable Servo Movement 
     OEFlag = true;                               // Set OE Flag so loop knows servos are enabled
-    OECounter = millis();                        // Set OE Timer to current millis so we can eventually run disableServos after movement is complete 
+    OETime = millis();                           // Set OE Time to current millis so we can eventually run disableServos after movement is complete 
   }
 }
 
@@ -855,19 +901,19 @@ void dimPulse(byte hp, int c, int setting) {
 }
 
 void ShortCircuit(byte hp, int c) {
-  if(SCloop[hp]<=20) {
+  if(SCloop[hp] <= SCMAXLOOPS) {
     if ((millis() - tCounter[hp]) > SCinterval[hp]) {
-      if(SCflag[hp]==0) {
+      if(SCflag[hp] == false) {
         for(int i=0; i<NEO_JEWEL_LEDS; i++)
           neoStrips[hp].setPixelColor(i,C_OFF);
-        SCflag[hp]=1;
+        SCflag[hp] = true;
         SCinterval[hp] = 10+(SCloop[hp]*random(15,25));
       } 
       else {
         for(int i=0; i<NEO_JEWEL_LEDS; i++)
           neoStrips[hp].setPixelColor(i,basicColors[c][random(0,10)]);
         neoStrips[hp].show();
-        SCflag[hp]=0;
+        SCflag[hp] = false;
         SCloop[hp]++;
       }
       tCounter[hp] = millis();
@@ -1039,11 +1085,56 @@ void flushCommandArray(byte hp, byte type) {
              
 void varResets(byte hp) {
   Frame[hp]=0;
-  SCflag[hp]=0;
-  SCloop[hp]=0;
+  SCflag[hp] = false;
+  SCloop[hp] = 0;
   SCinterval[hp] = 10;
   ledOFF(hp);                            // Clears Any Remaining Lit LEDs 
   enableTwitchLED[hp]=false;             // Toggle Auto LED Twitch off so it doesn't interupt sequence
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////                                                                                               /////
+/////                          Check for TEST mode and iterate through the tests                    /////
+/////                                                                                               /////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void testModeCheck() {
+  
+  if(stringComplete)
+  {
+    if(inputString == "TEST") // Enter test mode?
+    {
+      Serial.println(F("Start TEST mode"));
+      testMode=true;
+      testModeIndex = 0;
+      testModeTimer = millis() - (TESTMODEMSECS + 1); // Force test to start this cycle
+    }
+    else                      // Exit test mode due to any command override
+    {
+      testMode = false;
+    }
+  }
+  
+  if(testMode &&
+     millis() - testModeTimer >= TESTMODEMSECS) // Inject a test command
+  {
+    if(testModeIndex > TESTMODENUMTESTS) // Finished all tests? Revert back to default mode and exit test mode
+    {
+      inputString = "S9";
+      Serial.print(F("Exit TEST mode: ")); Serial.println(inputString);
+      stringComplete = true;
+      testMode = false;
+    }
+    else
+    {
+      inputString = testModeTests[testModeIndex];
+      stringComplete = true;
+      testModeTimer = millis();
+      testModeIndex++;
+      Serial.print(F("TEST: ")); Serial.println(inputString);
+    }
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
